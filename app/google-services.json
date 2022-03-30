@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "265491082253",
+    "project_id": "spendtalk-88540",
+    "storage_bucket": "spendtalk-88540.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:265491082253:android:1a41a12276b0feb9d73944",
+        "android_client_info": {
+          "package_name": "com.eslirodrigues.spendtalk"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "265491082253-77cghq3e6b900jb4hb1dsd11n8mjutai.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBnpQAVpzJVeXvVm0f7T02h89WwM38HxNE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "265491082253-77cghq3e6b900jb4hb1dsd11n8mjutai.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
