@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.eslirodrigues.spendtalk.core.state.MessageState
+import com.eslirodrigues.spendtalk.data.model.Channel
 import com.eslirodrigues.spendtalk.data.model.Message
 import com.eslirodrigues.spendtalk.ui.screen.destinations.SignInScreenDestination
 import com.eslirodrigues.spendtalk.ui.theme.PrimaryGreen
@@ -24,11 +25,12 @@ import com.google.firebase.ktx.Firebase
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 
-@Destination(start = true)
+@Destination
 @Composable
 fun MessageScreen(
     navigator: DestinationsNavigator,
     viewModel: MessageViewModel = viewModel(),
+    channel: Channel
 ) {
     val scaffoldState = rememberScaffoldState()
 
@@ -55,9 +57,9 @@ fun MessageScreen(
                 onClick = {
                     val messageId = reference.push().key
                     val userEmail = auth.currentUser?.email
-                    val message = Message(id = messageId!!, username = userEmail!!, text = inputText)
+                    val message = Message(id = messageId!!, email = userEmail!!, text = inputText)
                     viewModel.sendMessage(message)
-                    viewModel.getAllMessages()
+                    viewModel.getMessages()
                 }
             ) {
                 Text(text = "Send")
@@ -115,26 +117,16 @@ fun MessageTopAppBar(
                 onDismissRequest = { showMenu = false },
                 modifier = Modifier.background(Color.White)
             ) {
-                if (currentUser != null) {
-                    DropdownMenuItem(
-                        onClick = {
-                            auth.signOut()
-                            navigator.popBackStack(
-                                SignInScreenDestination,
-                                inclusive = false
-                            )
-                        }
-                    ) {
-                        Text(text = "Log out")
+                DropdownMenuItem(
+                    onClick = {
+                        auth.signOut()
+                        navigator.popBackStack(
+                            SignInScreenDestination,
+                            inclusive = false
+                        )
                     }
-                } else {
-                    DropdownMenuItem(
-                        onClick = {
-                            navigator.navigate(SignInScreenDestination)
-                        }
-                    ) {
-                        Text(text = "Log in")
-                    }
+                ) {
+                    Text(text = "Log out")
                 }
             }
         }

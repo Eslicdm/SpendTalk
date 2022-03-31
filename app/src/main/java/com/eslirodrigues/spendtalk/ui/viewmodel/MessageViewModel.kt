@@ -17,10 +17,10 @@ class MessageViewModel : ViewModel() {
     val response: MutableState<MessageState> = mutableStateOf(MessageState.Empty)
 
     init {
-        getAllMessages()
+        getMessages()
     }
 
-    fun getAllMessages() = viewModelScope.launch {
+    fun getMessages() = viewModelScope.launch {
         repository.getMessages()
             .onStart {
                 response.value = MessageState.Loading

@@ -14,7 +14,7 @@ import com.eslirodrigues.spendtalk.ui.theme.LightGreen
 fun MessageListItem(message: Message) {
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(text = message.username)
+        Text(text = message.email)
         Text(
             text = message.text,
             color = Color.Black,

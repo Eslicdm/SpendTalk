@@ -38,8 +38,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.eslirodrigues.spendtalk.R
+import com.eslirodrigues.spendtalk.ui.screen.destinations.ChannelScreenDestination
 import com.eslirodrigues.spendtalk.ui.screen.destinations.ForgotPasswordScreenDestination
-import com.eslirodrigues.spendtalk.ui.screen.destinations.MessageScreenDestination
 import com.eslirodrigues.spendtalk.ui.screen.destinations.SignUpScreenDestination
 import com.eslirodrigues.spendtalk.ui.theme.DarkGreen
 import com.eslirodrigues.spendtalk.ui.theme.PrimaryGreen
@@ -246,7 +246,7 @@ fun singIn(navigator: DestinationsNavigator, context: Context, email: String, pa
                     if (task.isSuccessful) {
                         Toast.makeText(context, "Login is successful", Toast.LENGTH_SHORT).show()
 
-                        navigator.navigate(MessageScreenDestination)
+                        navigator.navigate(ChannelScreenDestination)
                     } else {
                         Toast.makeText(context, task.exception!!.message.toString(), Toast.LENGTH_SHORT).show()
                     }

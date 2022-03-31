@@ -40,6 +40,6 @@ class MessageRepository {
 
     fun sendMessage(message: Message) {
         messageReference.child(message.id)
-            .setValue(Message(id = message.id, username = message.username, text = message.text))
+            .setValue(Message(id = message.id, email = message.email, text = message.text))
     }
 }

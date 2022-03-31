@@ -32,7 +32,8 @@
     <string name="confirm_password">Confirm Password</string>
     <string name="enter_without_login">Enter without log in</string>
     <string name="add">Add</string>
+    <string name="add_email">Add Email</string>
 
-<!-- others -->
+    <!-- others -->
 
 </resources>
