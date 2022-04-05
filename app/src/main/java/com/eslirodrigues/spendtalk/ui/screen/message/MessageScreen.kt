@@ -39,13 +39,19 @@ fun MessageScreen(
 
     var inputText by remember { mutableStateOf("") }
 
+    LaunchedEffect(key1 = Unit) {
+        viewModel.getMessages(channel)
+    }
+
     Scaffold(
         scaffoldState = scaffoldState,
         topBar = {
             MessageTopAppBar(navigator, auth)
         }
     ) {
-        Column(modifier = Modifier.padding(20.dp).fillMaxSize()) {
+        Column(modifier = Modifier
+            .padding(20.dp)
+            .fillMaxSize()) {
             Spacer(modifier = Modifier.padding(top = 20.dp))
             TextField(
                 value = inputText,
@@ -57,9 +63,9 @@ fun MessageScreen(
                 onClick = {
                     val messageId = reference.push().key
                     val userEmail = auth.currentUser?.email
-                    val message = Message(id = messageId!!, email = userEmail!!, text = inputText)
+                    val message = Message(id = messageId!!, channelId = channel.id, email = userEmail!!, text = inputText)
                     viewModel.sendMessage(message)
-                    viewModel.getMessages()
+                    viewModel.getMessages(channel)
                 }
             ) {
                 Text(text = "Send")

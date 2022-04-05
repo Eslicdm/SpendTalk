@@ -1,5 +1,6 @@
 package com.eslirodrigues.spendtalk.data.repository
 
+import com.eslirodrigues.spendtalk.data.model.Channel
 import com.eslirodrigues.spendtalk.data.model.Message
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -15,12 +16,12 @@ class MessageRepository {
 
     private val database = Firebase.database
 
-    private val messageReference = database.getReference("message")
+    private val messageReference = database.getReference("channel")
 
-    fun getMessages() : Flow<List<Message>> = flow {
+    fun getMessages(channel: Channel) : Flow<List<Message>> = flow {
         val messageList: MutableList<Message> = emptyList<Message>().toMutableList()
         messageReference.keepSynced(true)
-        messageReference.addValueEventListener(object : ValueEventListener {
+        messageReference.child(channel.id).child("messages").addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val items = snapshot.children.map { ds ->
                     ds.getValue(Message::class.java)?.copy(id = ds.key!!)
@@ -39,7 +40,7 @@ class MessageRepository {
 
 
     fun sendMessage(message: Message) {
-        messageReference.child(message.id)
-            .setValue(Message(id = message.id, email = message.email, text = message.text))
+        messageReference.child(message.channelId).child("messages").child(message.id)
+            .setValue(Message(id = message.id, channelId = message.channelId, email = message.email, text = message.text))
     }
 }

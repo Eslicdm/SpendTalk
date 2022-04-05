@@ -48,6 +48,11 @@ fun ChannelScreen(
     val reference = Firebase.database.getReference("message")
     val auth = FirebaseAuth.getInstance()
 
+    LaunchedEffect(key1 = Unit) {
+        viewModel.getChannels(auth.currentUser?.email!!)
+    }
+
+
     Scaffold(
         scaffoldState = scaffoldState,
         topBar = {
@@ -92,6 +97,9 @@ fun ChannelScreen(
                     Box(modifier = Modifier.fillMaxSize()) {
                         CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                     }
+                }
+                is ChannelState.Empty -> {
+                    Text(text = "")
                 }
             }
         }

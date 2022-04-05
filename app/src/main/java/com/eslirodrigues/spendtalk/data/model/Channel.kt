@@ -8,5 +8,6 @@ data class Channel(
     val id: String = "",
     val creatorEmail: String = "",
     val friendEmail: String = "",
+    val messages: HashMap<String, Message> = hashMapOf(),
     val hasMessage: Boolean = false,
 ) : Parcelable

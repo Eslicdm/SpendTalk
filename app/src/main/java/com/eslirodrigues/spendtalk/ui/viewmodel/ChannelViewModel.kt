@@ -20,12 +20,8 @@ class ChannelViewModel : ViewModel() {
 
     val response: MutableState<ChannelState> = mutableStateOf(ChannelState.Empty)
 
-    init {
-        getChannels()
-    }
-
-    fun getChannels() = viewModelScope.launch {
-        repository.getChannels()
+    fun getChannels(currentUserEmail: String) = viewModelScope.launch {
+        repository.getChannels(currentUserEmail)
             .onStart {
                 response.value = ChannelState.Loading
             }

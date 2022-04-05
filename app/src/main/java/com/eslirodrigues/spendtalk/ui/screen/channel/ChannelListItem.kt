@@ -12,10 +12,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.eslirodrigues.spendtalk.data.model.Channel
 import com.eslirodrigues.spendtalk.ui.screen.destinations.MessageScreenDestination
+import com.google.firebase.auth.FirebaseAuth
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 
 @Composable
 fun ChannelListItem(navigator: DestinationsNavigator, channel: Channel) {
+
+    val currentUserEmail = FirebaseAuth.getInstance().currentUser?.email
 
     Card(Modifier.fillMaxWidth().height(60.dp).padding(top = 7.dp)) {
         Row(
@@ -26,7 +29,8 @@ fun ChannelListItem(navigator: DestinationsNavigator, channel: Channel) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(text = channel.friendEmail)
+
+            Text(text = if (channel.friendEmail == currentUserEmail) channel.creatorEmail else channel.friendEmail)
             if (channel.hasMessage) {
                 Canvas(modifier = Modifier.size(42.dp).padding(end = 30.dp), onDraw = {
                     drawCircle(color = Color.Red)

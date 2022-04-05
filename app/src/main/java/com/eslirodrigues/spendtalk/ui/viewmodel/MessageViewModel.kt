@@ -4,6 +4,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.*
 import com.eslirodrigues.spendtalk.core.state.MessageState
+import com.eslirodrigues.spendtalk.data.model.Channel
 import com.eslirodrigues.spendtalk.data.model.Message
 import com.eslirodrigues.spendtalk.data.repository.MessageRepository
 import kotlinx.coroutines.delay
@@ -16,20 +17,13 @@ class MessageViewModel : ViewModel() {
 
     val response: MutableState<MessageState> = mutableStateOf(MessageState.Empty)
 
-    init {
-        getMessages()
-    }
-
-    fun getMessages() = viewModelScope.launch {
-        repository.getMessages()
+    fun getMessages(channel: Channel) = viewModelScope.launch {
+        repository.getMessages(channel)
             .onStart {
                 response.value = MessageState.Loading
             }
             .catch {
                 response.value = MessageState.Failure(it)
-            }
-            .onEach {
-
             }
             .collect {
                 delay(40L)
