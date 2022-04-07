@@ -2,16 +2,12 @@ package com.eslirodrigues.spendtalk.ui.viewmodel
 
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.*
 import com.eslirodrigues.spendtalk.core.state.ChannelState
 import com.eslirodrigues.spendtalk.data.model.Channel
 import com.eslirodrigues.spendtalk.data.repository.ChannelRepository
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class ChannelViewModel : ViewModel() {

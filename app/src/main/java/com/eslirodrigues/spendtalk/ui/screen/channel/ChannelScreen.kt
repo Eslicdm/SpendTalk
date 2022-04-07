@@ -44,6 +44,7 @@ fun ChannelScreen(
     val scaffoldState = rememberScaffoldState()
 
     val showAddChannelDialog = remember { mutableStateOf(false) }
+    val showMenu = remember { mutableStateOf(false) }
 
     val reference = Firebase.database.getReference("message")
     val auth = FirebaseAuth.getInstance()
@@ -56,7 +57,7 @@ fun ChannelScreen(
     Scaffold(
         scaffoldState = scaffoldState,
         topBar = {
-            ChannelTopAppBar(navigator, auth)
+            ChannelTopAppBar(navigator, auth, showMenu)
         },
         floatingActionButtonPosition = FabPosition.End,
         floatingActionButton = {
@@ -206,11 +207,9 @@ fun AddChannelDialog(
 @Composable
 fun ChannelTopAppBar(
     navigator: DestinationsNavigator,
-    auth: FirebaseAuth
+    auth: FirebaseAuth,
+    showMenu: MutableState<Boolean>
 ) {
-    var showMenu by remember { mutableStateOf(false) }
-    val currentUser = auth.currentUser
-
     TopAppBar(
         title = {
             Text("SpendTalk", color = Color.White)
@@ -224,12 +223,12 @@ fun ChannelTopAppBar(
 //            ) },
         },
         actions = {
-            IconButton(onClick = { showMenu = !showMenu }) {
+            IconButton(onClick = { showMenu.value = !showMenu.value }) {
                 Icon(imageVector = Icons.Default.MoreVert, "More", tint = Color.White)
             }
             DropdownMenu(
-                expanded = showMenu,
-                onDismissRequest = { showMenu = false },
+                expanded = showMenu.value,
+                onDismissRequest = { showMenu.value = false },
                 modifier = Modifier.background(Color.White)
             ) {
                 DropdownMenuItem(

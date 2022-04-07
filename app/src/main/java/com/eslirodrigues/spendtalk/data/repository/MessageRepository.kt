@@ -1,5 +1,6 @@
 package com.eslirodrigues.spendtalk.data.repository
 
+import androidx.compose.runtime.mutableStateListOf
 import com.eslirodrigues.spendtalk.data.model.Channel
 import com.eslirodrigues.spendtalk.data.model.Message
 import com.google.firebase.database.DataSnapshot
@@ -19,15 +20,14 @@ class MessageRepository {
     private val messageReference = database.getReference("channel")
 
     fun getMessages(channel: Channel) : Flow<List<Message>> = flow {
-        val messageList: MutableList<Message> = emptyList<Message>().toMutableList()
+        val messageList = mutableStateListOf<Message>()
         messageReference.keepSynced(true)
         messageReference.child(channel.id).child("messages").addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val items = snapshot.children.map { ds ->
+                snapshot.children.map { ds ->
                     ds.getValue(Message::class.java)?.copy(id = ds.key!!)
-                }
-                items.forEach {
-                    messageList.add(it!!)
+                }.forEach { message ->
+                    messageList.add(message!!)
                 }
             }
 

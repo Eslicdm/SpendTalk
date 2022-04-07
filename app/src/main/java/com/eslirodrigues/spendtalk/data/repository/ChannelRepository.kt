@@ -1,5 +1,6 @@
 package com.eslirodrigues.spendtalk.data.repository
 
+import androidx.compose.runtime.mutableStateListOf
 import com.eslirodrigues.spendtalk.data.model.Channel
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -18,14 +19,13 @@ class ChannelRepository {
     private val channelReference = database.getReference("channel")
 
     fun getChannels(currentUserEmail: String) : Flow<List<Channel>> = flow {
-        val channelList: MutableList<Channel> = emptyList<Channel>().toMutableList()
+        val channelList = mutableStateListOf<Channel>()
         channelReference.keepSynced(true)
         channelReference.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val items = snapshot.children.map { ds ->
+                snapshot.children.map { ds ->
                     ds.getValue(Channel::class.java)?.copy(id = ds.key!!)
-                }
-                items.forEach { channel ->
+                }.forEach { channel ->
                     if (channel?.creatorEmail == currentUserEmail || channel?.friendEmail == currentUserEmail) {
                         channelList.add(channel)
                     }
