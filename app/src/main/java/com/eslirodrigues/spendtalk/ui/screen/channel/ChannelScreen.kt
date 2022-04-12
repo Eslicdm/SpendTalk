@@ -238,6 +238,7 @@ fun ChannelTopAppBar(
                             SignInScreenDestination,
                             inclusive = false
                         )
+                        navigator.navigate(SignInScreenDestination)
                     }
                 ) {
                     Text(text = "Log out")
