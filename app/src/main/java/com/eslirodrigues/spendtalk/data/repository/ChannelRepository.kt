@@ -51,4 +51,8 @@ class ChannelRepository {
                 )
             )
     }
+
+    fun deleteChannel(channel: Channel) {
+        channelReference.child(channel.id).removeValue()
+    }
 }

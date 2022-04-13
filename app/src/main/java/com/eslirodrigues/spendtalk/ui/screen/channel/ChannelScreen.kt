@@ -10,6 +10,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -33,7 +34,9 @@ import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterialApi::class)
 @Destination(start = true)
 @Composable
 fun ChannelScreen(
@@ -42,6 +45,7 @@ fun ChannelScreen(
 ) {
 
     val scaffoldState = rememberScaffoldState()
+    val scope = rememberCoroutineScope()
 
     val showAddChannelDialog = remember { mutableStateOf(false) }
     val showMenu = remember { mutableStateOf(false) }
@@ -86,8 +90,54 @@ fun ChannelScreen(
             when(val result = viewModel.response.value) {
                 is ChannelState.Success -> {
                     LazyColumn {
-                        items(result.data) { item ->
-                            ChannelListItem(navigator = navigator, channel = item)
+                        items(result.data) { channel ->
+                            val state = rememberDismissState(
+                                confirmStateChange = {
+                                    if (it == DismissValue.DismissedToStart) {
+                                        scope.launch {
+                                            val snackbarResult = scaffoldState.snackbarHostState.showSnackbar(
+                                                message = "Delete task was successful",
+                                                actionLabel = "Undo"
+                                            )
+                                            when(snackbarResult) {
+                                                SnackbarResult.Dismissed -> {
+                                                    viewModel.deleteChannel(channel)
+                                                    viewModel.getChannels(auth.currentUser?.email!!)
+                                                }
+                                                SnackbarResult.ActionPerformed -> viewModel.getChannels(auth.currentUser?.email!!)
+                                            }
+                                        }
+                                    }
+                                    true
+                                }
+                            )
+                            SwipeToDismiss(
+                                state = state,
+                                background = {
+                                    val color = when (state.dismissDirection) {
+                                        DismissDirection.StartToEnd -> Color.Transparent
+                                        DismissDirection.EndToStart -> Color.Red
+                                        null -> Color.Transparent
+                                    }
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(color = color)
+                                            .padding(8.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Delete,
+                                            contentDescription = "Delete",
+                                            tint = Color.White,
+                                            modifier = Modifier.align(Alignment.CenterEnd)
+                                        )
+                                    }
+                                },
+                                dismissContent = {
+                                    ChannelListItem(navigator = navigator, channel = channel)
+                                },
+                                directions = setOf(DismissDirection.EndToStart)
+                            )
                         }
                     }
                 }

@@ -117,7 +117,9 @@ fun MessageScreen(
                         LazyColumn(modifier = Modifier.padding(bottom = it.calculateBottomPadding()),
                             state = lazyState) {
                             coroutineScope.launch {
-                                lazyState.scrollToItem(result.data.lastIndex)
+                                if (result.data.isNotEmpty()) {
+                                    lazyState.scrollToItem(result.data.lastIndex)
+                                }
                             }
                             items(result.data) { item ->
                                 MessageListItem(message = item)

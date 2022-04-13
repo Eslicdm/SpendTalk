@@ -33,4 +33,8 @@ class ChannelViewModel : ViewModel() {
     fun addChannel(channel: Channel) = viewModelScope.launch {
         repository.addChannel(channel)
     }
+
+    fun deleteChannel(channel: Channel) = viewModelScope.launch {
+        repository.deleteChannel(channel)
+    }
 }
