@@ -1,31 +1,37 @@
 package com.eslirodrigues.spendtalk.ui.screen.auth
 
 import android.content.Context
+import android.net.Uri
 import android.text.TextUtils
+import androidx.compose.foundation.Image
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role.Companion.Image
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -35,17 +41,27 @@ import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.toUpperCase
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.eslirodrigues.spendtalk.R
+import com.eslirodrigues.spendtalk.data.model.User
 import com.eslirodrigues.spendtalk.ui.screen.destinations.SignInScreenDestination
 import com.eslirodrigues.spendtalk.ui.theme.DarkGreen
+import com.eslirodrigues.spendtalk.ui.theme.LightGreen
 import com.eslirodrigues.spendtalk.ui.theme.PrimaryGreen
+import com.eslirodrigues.spendtalk.ui.viewmodel.UserViewModel
+import com.google.accompanist.glide.rememberGlidePainter
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.ktx.database
+import com.google.firebase.ktx.Firebase
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 
 @Destination
 @Composable
-fun SignUpScreen(navigator: DestinationsNavigator) {
+fun SignUpScreen(
+    navigator: DestinationsNavigator,
+    viewModel: UserViewModel = viewModel()
+) {
     var inputEmail by remember { mutableStateOf("") }
     var iconEmailState by remember { mutableStateOf(false) }
     var inputPassword by remember { mutableStateOf("") }
@@ -57,27 +73,39 @@ fun SignUpScreen(navigator: DestinationsNavigator) {
     val focusManager = LocalFocusManager.current
     val context = LocalContext.current
 
+    var imageUri by remember { mutableStateOf<Uri?>(null) }
+    val launcher = rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { uri: Uri? ->
+            imageUri = uri
+        }
+
     Box(
         modifier = Modifier
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        PrimaryGreen,
-                        DarkGreen
-                    )
-                )
-            )
+            .background(Brush.verticalGradient(colors = listOf(PrimaryGreen, DarkGreen)))
             .fillMaxSize()
     ) {
-//        Image(
-//            painterResource(R.drawable.ic_simpletasktodobrand),
-//            contentDescription = stringResource(id = R.string.app_name),
-//            modifier = Modifier
-//                .align(Alignment.TopCenter)
-//                .padding(top = 120.dp)
-//                .width(80.dp)
-//                .height(80.dp)
-//        )
+        IconButton(
+            onClick = {
+                launcher.launch("image/*")
+            },
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 70.dp)
+                .size(200.dp)
+                .clip(CircleShape)
+                .border(width = 7.dp, color = LightGreen, shape = CircleShape)
+                .background(Color.White)
+        ) {
+            if (imageUri == null) {
+                Icon(Icons.Default.AddAPhoto, contentDescription = stringResource(id = R.string.add_photo), modifier = Modifier.size(80.dp))
+            } else {
+                Image(
+                    painter = rememberGlidePainter(imageUri),
+                    contentScale = ContentScale.Crop,
+                    contentDescription = null
+                )
+            }
+
+        }
         Card(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -187,6 +215,8 @@ fun SignUpScreen(navigator: DestinationsNavigator) {
                     keyboardActions = KeyboardActions(
                         onDone = {
                             signUp(
+                                imageUri = imageUri,
+                                viewModel = viewModel,
                                 navigator = navigator,
                                 context = context,
                                 email = inputEmail,
@@ -215,6 +245,8 @@ fun SignUpScreen(navigator: DestinationsNavigator) {
                     shape = RoundedCornerShape(corner = CornerSize(50.dp)),
                     onClick = {
                         signUp(
+                            imageUri = imageUri,
+                            viewModel = viewModel,
                             navigator = navigator,
                             context = context,
                             email = inputEmail,
@@ -253,7 +285,14 @@ fun SignUpScreen(navigator: DestinationsNavigator) {
     }
 }
 
-fun signUp(navigator: DestinationsNavigator, context: Context, email: String, password: String, confirmPassword: String) {
+fun signUp(
+    viewModel: UserViewModel,
+    imageUri: Uri?,
+    navigator: DestinationsNavigator,
+    context: Context, email: String,
+    password: String,
+    confirmPassword: String
+) {
     when {
         TextUtils.isEmpty(
             email.trim { it <= ' ' }) -> {
@@ -279,6 +318,8 @@ fun signUp(navigator: DestinationsNavigator, context: Context, email: String, pa
                     if (task.isSuccessful) {
                         Toast.makeText(context, "You were registered successfully", Toast.LENGTH_SHORT).show()
 
+                        val reference = Firebase.database.getReference("user")
+                        viewModel.addUser(user = User(id = reference.push().key!!, email = email, image = imageUri.toString()))
                         navigator.navigate(SignInScreenDestination())
 
                     } else {

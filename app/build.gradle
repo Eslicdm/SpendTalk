@@ -88,4 +88,7 @@ dependencies {
 
     // asFlow
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.4.0")
+
+    // Glide
+    implementation "com.google.accompanist:accompanist-glide:0.10.0"
 }
