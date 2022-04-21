@@ -1,12 +1,17 @@
 package com.eslirodrigues.spendtalk.ui.screen.auth
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.ImageDecoder
 import android.net.Uri
+import android.os.Build
+import android.provider.MediaStore
 import android.text.TextUtils
-import androidx.compose.foundation.Image
+import android.util.Base64
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -31,7 +36,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role.Companion.Image
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -55,12 +59,13 @@ import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import java.io.ByteArrayOutputStream
 
 @Destination
 @Composable
 fun SignUpScreen(
     navigator: DestinationsNavigator,
-    viewModel: UserViewModel = viewModel()
+    viewModel: UserViewModel = viewModel(),
 ) {
     var inputEmail by remember { mutableStateOf("") }
     var iconEmailState by remember { mutableStateOf(false) }
@@ -79,17 +84,14 @@ fun SignUpScreen(
         }
 
     Box(
-        modifier = Modifier
-            .background(Brush.verticalGradient(colors = listOf(PrimaryGreen, DarkGreen)))
-            .fillMaxSize()
+        modifier = Modifier.background(Brush.verticalGradient(colors = listOf(PrimaryGreen, DarkGreen))).fillMaxSize()
     ) {
         IconButton(
             onClick = {
                 launcher.launch("image/*")
             },
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 70.dp)
+            modifier = Modifier.align(Alignment.TopCenter)
+                .padding(top = 50.dp)
                 .size(200.dp)
                 .clip(CircleShape)
                 .border(width = 7.dp, color = LightGreen, shape = CircleShape)
@@ -291,7 +293,7 @@ fun signUp(
     navigator: DestinationsNavigator,
     context: Context, email: String,
     password: String,
-    confirmPassword: String
+    confirmPassword: String,
 ) {
     when {
         TextUtils.isEmpty(
@@ -319,7 +321,24 @@ fun signUp(
                         Toast.makeText(context, "You were registered successfully", Toast.LENGTH_SHORT).show()
 
                         val reference = Firebase.database.getReference("user")
-                        viewModel.addUser(user = User(id = reference.push().key!!, email = email, image = imageUri.toString()))
+
+                        if (imageUri != null) {
+                            val bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                                ImageDecoder.decodeBitmap(ImageDecoder.createSource(context.contentResolver, imageUri))
+                            } else {
+                                MediaStore.Images.Media.getBitmap(context.contentResolver, imageUri)
+                            }
+
+                            val baos = ByteArrayOutputStream()
+                            bitmap.compress(Bitmap.CompressFormat.PNG, 100, baos)
+                            val b = baos.toByteArray()
+                            val stringBitmap = Base64.encodeToString(b, Base64.DEFAULT)
+
+                            viewModel.addUser(user = User(id = reference.push().key!!, email = email, image = stringBitmap))
+                        } else {
+                            viewModel.addUser(user = User(id = reference.push().key!!, email = email))
+                        }
+
                         navigator.navigate(SignInScreenDestination())
 
                     } else {
