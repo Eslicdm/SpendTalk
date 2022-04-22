@@ -2,6 +2,7 @@ package com.eslirodrigues.spendtalk.ui.screen.channel
 
 import android.graphics.BitmapFactory
 import android.util.Base64
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -24,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -45,6 +47,7 @@ import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterialApi::class)
@@ -71,7 +74,7 @@ fun ChannelScreen(
     }
 
     channelViewModel.getChannels(userEmail)
-    userViewModel.getUser(userEmail)
+    userViewModel.getUsers()
 
     Scaffold(
         scaffoldState = scaffoldState,
@@ -91,6 +94,7 @@ fun ChannelScreen(
                         viewModel = channelViewModel,
                         showAddChannelDialog = showAddChannelDialog,
                         auth = auth,
+                        userViewModel = userViewModel,
                         reference = reference
                     )
                 Icon(
@@ -177,8 +181,10 @@ fun AddChannelDialog(
     viewModel: ChannelViewModel,
     showAddChannelDialog: MutableState<Boolean>,
     auth: FirebaseAuth,
-    reference: DatabaseReference
+    userViewModel: UserViewModel,
+    reference: DatabaseReference,
 ) {
+    val context = LocalContext.current
     var inputFriendEmail by remember { mutableStateOf("") }
     val focusManager = LocalFocusManager.current
 
@@ -229,17 +235,30 @@ fun AddChannelDialog(
                 modifier = Modifier
                     .padding(start = 5.dp, end = 15.dp, top = 5.dp, bottom = 5.dp),
                 onClick = {
-                    focusManager.clearFocus()
-                    val channelId = reference.push().key
-                    val creatorEmail = auth.currentUser?.email
-                    val channel = Channel(
-                        id = channelId!!,
-                        creatorEmail = creatorEmail!!,
-                        friendEmail = inputFriendEmail,
-                        hasMessage = false
-                    )
-                    viewModel.addChannel(channel)
-                    showAddChannelDialog.value = false
+                    when(val userResult = userViewModel.response.value) {
+                        is UserState.Success -> {
+                            val emailList = mutableListOf<String>()
+                            userResult.data.forEach { emailList.add(it.email) }
+                            if (emailList.contains(inputFriendEmail)) {
+                                focusManager.clearFocus()
+                                val channelId = reference.push().key
+                                val creatorEmail = auth.currentUser?.email
+                                val channel = Channel(
+                                    id = channelId!!,
+                                    creatorEmail = creatorEmail!!,
+                                    friendEmail = inputFriendEmail,
+                                    hasMessage = false
+                                )
+                                viewModel.addChannel(channel)
+                                showAddChannelDialog.value = false
+                            } else {
+                                Toast.makeText(context, "Invalid Email", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                        else -> {
+                            Toast.makeText(context, "Invalid Email", Toast.LENGTH_SHORT).show()
+                        }
+                    }
                 }
             ) {
                 Text(
@@ -292,7 +311,8 @@ fun ChannelTopAppBar(
             ) {
                 when(val userResult = userViewModel.response.value) {
                     is UserState.Success -> {
-                        val imageBitmap = userResult.data.firstOrNull()?.image
+                        val users = userResult.data.filter { it.email == auth.currentUser?.email }
+                        val imageBitmap = users.firstOrNull()?.image
                         if (!imageBitmap.isNullOrEmpty()) {
                             val imageBytes = Base64.decode(imageBitmap, 0)
                             val image = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)

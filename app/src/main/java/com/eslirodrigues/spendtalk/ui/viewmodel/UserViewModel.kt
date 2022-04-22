@@ -19,8 +19,8 @@ class UserViewModel : ViewModel() {
 
     val response: MutableState<UserState> = mutableStateOf(UserState.Empty)
 
-    fun getUser(userEmail: String) = viewModelScope.launch {
-        repository.getUser(userEmail)
+    fun getUsers() = viewModelScope.launch {
+        repository.getUsers()
             .onStart {
                 response.value = UserState.Loading
             }

@@ -1,6 +1,7 @@
 package com.eslirodrigues.spendtalk.data.repository
 
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import com.eslirodrigues.spendtalk.data.model.User
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -18,15 +19,15 @@ class UserRepository {
 
     private val userReference = database.getReference("user")
 
-    fun getUser(userEmail: String) : Flow<List<User>> = flow {
-        val currentUser = mutableStateListOf<User>()
+    fun getUsers() : Flow<List<User>> = flow {
+        val allUsers = mutableStateListOf<User>()
         userReference.keepSynced(true)
         userReference.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 snapshot.children.map {
                     it.getValue(User::class.java)
                 }.forEach {
-                    if (userEmail == it?.email) currentUser.add(it)
+                    allUsers.add(it!!)
                 }
             }
 
@@ -34,7 +35,7 @@ class UserRepository {
 
             }
         })
-        emit(currentUser)
+        emit(allUsers)
     }.flowOn(Dispatchers.IO)
 
 
