@@ -304,10 +304,7 @@ fun ChannelTopAppBar(
             IconButton(onClick = {
                 // navigate to alert change image
                 },
-                modifier = Modifier
-                    .size(50.dp)
-                    .clip(CircleShape)
-                    .border(width = 2.dp, color = LightGreen, shape = CircleShape)
+                modifier = Modifier.size(50.dp).clip(CircleShape).border(width = 2.dp, color = LightGreen, shape = CircleShape)
             ) {
                 when(val userResult = userViewModel.response.value) {
                     is UserState.Success -> {
