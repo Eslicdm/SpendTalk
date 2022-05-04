@@ -18,7 +18,7 @@ class ChannelRepository {
 
     private val channelReference = database.getReference("channel")
 
-    fun getChannels(currentUserEmail: String) : Flow<List<Channel>> = flow {
+    fun getChannels() : Flow<List<Channel>> = flow {
         val channelList = mutableStateListOf<Channel>()
         channelReference.keepSynced(true)
         channelReference.addValueEventListener(object : ValueEventListener {
@@ -26,9 +26,7 @@ class ChannelRepository {
                 snapshot.children.map { ds ->
                     ds.getValue(Channel::class.java)?.copy(id = ds.key!!)
                 }.forEach { channel ->
-                    if (channel?.creatorEmail == currentUserEmail || channel?.friendEmail == currentUserEmail) {
-                        channelList.add(channel)
-                    }
+                    channelList.add(channel!!)
                 }
             }
 

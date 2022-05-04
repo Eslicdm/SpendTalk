@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
@@ -40,14 +41,12 @@ import com.eslirodrigues.spendtalk.ui.theme.LightGreen
 import com.eslirodrigues.spendtalk.ui.theme.PrimaryGreen
 import com.eslirodrigues.spendtalk.ui.viewmodel.ChannelViewModel
 import com.eslirodrigues.spendtalk.ui.viewmodel.UserViewModel
-import com.google.accompanist.glide.rememberGlidePainter
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterialApi::class)
@@ -68,13 +67,7 @@ fun ChannelScreen(
     val reference = Firebase.database.getReference("message")
     val auth = FirebaseAuth.getInstance()
 
-    var userEmail = ""
-    if (!auth.currentUser?.email.isNullOrEmpty()) {
-        userEmail = auth.currentUser?.email!!
-    }
-
-    channelViewModel.getChannels(userEmail)
-    userViewModel.getUsers()
+    val userEmail = auth.currentUser?.email
 
     Scaffold(
         scaffoldState = scaffoldState,
@@ -106,10 +99,11 @@ fun ChannelScreen(
         }
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            when(val result = channelViewModel.response.value) {
+            when(val channelState = channelViewModel.channelState.collectAsState().value) {
                 is ChannelState.Success -> {
+                    val channelList = channelState.data.filter { it.creatorEmail == userEmail || it.friendEmail == userEmail }
                     LazyColumn {
-                        items(result.data) { channel ->
+                        items(channelList) { channel ->
                             val state = rememberDismissState(
                                 confirmStateChange = {
                                     if (it == DismissValue.DismissedToStart) {
@@ -121,9 +115,9 @@ fun ChannelScreen(
                                             when(snackbarResult) {
                                                 SnackbarResult.Dismissed -> {
                                                     channelViewModel.deleteChannel(channel)
-                                                    channelViewModel.getChannels(userEmail)
+                                                    channelViewModel.refreshChannels()
                                                 }
-                                                SnackbarResult.ActionPerformed -> channelViewModel.getChannels(userEmail)
+                                                SnackbarResult.ActionPerformed -> channelViewModel.refreshChannels()
                                             }
                                         }
                                     }
@@ -161,7 +155,7 @@ fun ChannelScreen(
                     }
                 }
                 is ChannelState.Failure -> {
-                    Text(text = "${result.msg}")
+                    Text(text = "${channelState.msg}")
                 }
                 is ChannelState.Loading -> {
                     Box(modifier = Modifier.fillMaxSize()) {
@@ -235,7 +229,7 @@ fun AddChannelDialog(
                 modifier = Modifier
                     .padding(start = 5.dp, end = 15.dp, top = 5.dp, bottom = 5.dp),
                 onClick = {
-                    when(val userResult = userViewModel.response.value) {
+                    when(val userResult = userViewModel.userState.value) {
                         is UserState.Success -> {
                             val emailList = mutableListOf<String>()
                             userResult.data.forEach { emailList.add(it.email) }
@@ -304,9 +298,12 @@ fun ChannelTopAppBar(
             IconButton(onClick = {
                 // navigate to alert change image
                 },
-                modifier = Modifier.size(50.dp).clip(CircleShape).border(width = 2.dp, color = LightGreen, shape = CircleShape)
+                modifier = Modifier
+                    .size(50.dp)
+                    .clip(CircleShape)
+                    .border(width = 2.dp, color = LightGreen, shape = CircleShape)
             ) {
-                when(val userResult = userViewModel.response.value) {
+                when(val userResult = userViewModel.userState.value) {
                     is UserState.Success -> {
                         val users = userResult.data.filter { it.email == auth.currentUser?.email }
                         val imageBitmap = users.firstOrNull()?.image
@@ -315,7 +312,7 @@ fun ChannelTopAppBar(
                             val image = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
 
                             Image(
-                                painter = rememberGlidePainter(image),
+                                bitmap = image.asImageBitmap(),
                                 contentScale = ContentScale.Crop,
                                 contentDescription = stringResource(id = R.string.user_profile),
                             )

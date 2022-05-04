@@ -17,12 +17,12 @@ class MessageRepository {
 
     private val database = Firebase.database
 
-    private val messageReference = database.getReference("channel")
+    private val messageReference = database.getReference("messages")
 
-    fun getMessages(channel: Channel) : Flow<List<Message>> = flow {
+    fun getMessages() : Flow<List<Message>> = flow {
         val messageList = mutableStateListOf<Message>()
         messageReference.keepSynced(true)
-        messageReference.child(channel.id).child("messages").addValueEventListener(object : ValueEventListener {
+        messageReference.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 snapshot.children.map { ds ->
                     ds.getValue(Message::class.java)?.copy(id = ds.key!!)
@@ -40,7 +40,7 @@ class MessageRepository {
 
 
     fun sendMessage(message: Message) {
-        messageReference.child(message.channelId).child("messages").child(message.id)
+        messageReference.child(message.id)
             .setValue(Message(id = message.id, channelId = message.channelId, email = message.email, text = message.text))
     }
 }

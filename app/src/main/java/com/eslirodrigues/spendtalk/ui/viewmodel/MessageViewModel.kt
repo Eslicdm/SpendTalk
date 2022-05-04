@@ -1,33 +1,39 @@
 package com.eslirodrigues.spendtalk.ui.viewmodel
 
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
-import androidx.lifecycle.*
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.eslirodrigues.spendtalk.core.state.MessageState
-import com.eslirodrigues.spendtalk.data.model.Channel
 import com.eslirodrigues.spendtalk.data.model.Message
 import com.eslirodrigues.spendtalk.data.repository.MessageRepository
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 
 class MessageViewModel : ViewModel() {
 
     private val repository = MessageRepository()
 
-    val response: MutableState<MessageState> = mutableStateOf(MessageState.Empty)
+    private val _messageState: MutableState<MessageState> = mutableStateOf(MessageState.Empty)
+    val messageState: State<MessageState> get() = _messageState
 
-    fun getMessages(channel: Channel) = viewModelScope.launch {
-        repository.getMessages(channel)
+    init {
+        getMessages()
+    }
+
+    private fun getMessages() = viewModelScope.launch {
+        repository.getMessages()
             .onStart {
-                response.value = MessageState.Loading
+                _messageState.value = MessageState.Loading
             }
             .catch {
-                response.value = MessageState.Failure(it)
+                _messageState.value = MessageState.Failure(it)
             }
             .collect {
-                delay(40L)
-                response.value = MessageState.Success(it)
+                _messageState.value = MessageState.Success(it)
             }
     }
 

@@ -1,6 +1,7 @@
 package com.eslirodrigues.spendtalk.ui.viewmodel
 
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -17,19 +18,24 @@ class UserViewModel : ViewModel() {
 
     private val repository = UserRepository()
 
-    val response: MutableState<UserState> = mutableStateOf(UserState.Empty)
+    private val _userState: MutableState<UserState> = mutableStateOf(UserState.Empty)
+    val userState: State<UserState> get() = _userState
 
-    fun getUsers() = viewModelScope.launch {
+    init {
+        getUsers()
+    }
+
+    private fun getUsers() = viewModelScope.launch {
         repository.getUsers()
             .onStart {
-                response.value = UserState.Loading
+                _userState.value = UserState.Loading
             }
             .catch {
-                response.value = UserState.Failure(it)
+                _userState.value = UserState.Failure(it)
             }
             .collect {
                 delay(40L)
-                response.value = UserState.Success(it)
+                _userState.value = UserState.Success(it)
             }
     }
 

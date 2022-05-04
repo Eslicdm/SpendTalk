@@ -23,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
@@ -34,11 +35,11 @@ import com.eslirodrigues.spendtalk.core.state.MessageState
 import com.eslirodrigues.spendtalk.core.state.UserState
 import com.eslirodrigues.spendtalk.data.model.Channel
 import com.eslirodrigues.spendtalk.data.model.Message
+import com.eslirodrigues.spendtalk.ui.screen.destinations.ChannelScreenDestination
 import com.eslirodrigues.spendtalk.ui.theme.LightGreen
 import com.eslirodrigues.spendtalk.ui.theme.PrimaryGreen
 import com.eslirodrigues.spendtalk.ui.viewmodel.MessageViewModel
 import com.eslirodrigues.spendtalk.ui.viewmodel.UserViewModel
-import com.google.accompanist.glide.rememberGlidePainter
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
@@ -66,10 +67,6 @@ fun MessageScreen(
     val auth = FirebaseAuth.getInstance()
 
     var inputText by remember { mutableStateOf("") }
-
-    LaunchedEffect(key1 = Unit) {
-        messageViewModel.getMessages(channel)
-    }
 
     val messageId = reference.push().key
     val userEmail = auth.currentUser?.email
@@ -125,17 +122,18 @@ fun MessageScreen(
             Column(modifier = Modifier
                 .fillMaxSize()
                 .padding(10.dp)) {
-                when (val result = messageViewModel.response.value) {
+                when (val result = messageViewModel.messageState.value) {
                     is MessageState.Success -> {
+                        val messageList = result.data.filter { it.channelId == channel.id }
                         LazyColumn(modifier = Modifier.padding(bottom = it.calculateBottomPadding()),
                             state = lazyState) {
                             coroutineScope.launch {
-                                if (result.data.isNotEmpty()) {
+                                if (messageList.isNotEmpty()) {
                                     lazyState.scrollToItem(result.data.lastIndex)
                                 }
                             }
-                            items(result.data) { item ->
-                                MessageListItem(message = item)
+                            items(messageList) { message ->
+                                MessageListItem(message = message)
                             }
 
                         }
@@ -149,7 +147,7 @@ fun MessageScreen(
                         }
                     }
                     is MessageState.Empty -> {
-                        Text(text = "Empty")
+                        Text(text = "")
                     }
                 }
             }
@@ -165,7 +163,6 @@ fun MessageTopAppBar(
     channel: Channel,
     userViewModel: UserViewModel,
 ) {
-    userViewModel.getUsers()
     val currentUserEmail = auth.currentUser?.email
     TopAppBar(
         title = {
@@ -176,21 +173,24 @@ fun MessageTopAppBar(
             Icon(
                 Icons.Default.ArrowBack,
                 contentDescription = stringResource(id = R.string.back),
-                modifier = Modifier.clickable { navigator.popBackStack() }
+                modifier = Modifier.clickable { navigator.popBackStack(ChannelScreenDestination, false) }
             )
-            when(val userResult = userViewModel.response.value) {
+
+            when(val state = userViewModel.userState.value) {
                 is UserState.Success -> {
-                    val users = userResult.data.filter { it.email == channel.friendEmail }
-                    val imageBitmap = users.firstOrNull()?.image
-                    if (!imageBitmap.isNullOrEmpty()) {
-                        val imageBytes = Base64.decode(imageBitmap, 0)
+                    val userImage = state.data.firstOrNull { it.email == if (channel.creatorEmail != currentUserEmail) channel.creatorEmail else channel.friendEmail }?.image
+                    if (!userImage.isNullOrEmpty()) {
+                        val imageBytes = Base64.decode(userImage, 0)
                         val image = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
 
                         Image(
-                            painter = rememberGlidePainter(image),
+                            bitmap = image.asImageBitmap(),
                             contentScale = ContentScale.Crop,
                             contentDescription = stringResource(id = R.string.user_profile),
-                            modifier = Modifier.size(40.dp).clip(CircleShape).border(width = 2.dp, color = LightGreen, shape = CircleShape)
+                            modifier = Modifier
+                                .size(45.dp)
+                                .clip(CircleShape)
+                                .border(width = 2.dp, color = LightGreen, shape = CircleShape)
                         )
                     } else {
                         Icon(Icons.Default.AccountCircle, contentDescription = stringResource(id = R.string.user_profile), modifier = Modifier.fillMaxSize())
@@ -200,9 +200,6 @@ fun MessageTopAppBar(
                     Box(modifier = Modifier.fillMaxSize()) {
                         CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                     }
-                }
-                else -> {
-                    Icon(Icons.Default.AccountCircle, contentDescription = stringResource(id = R.string.user_profile), modifier = Modifier.fillMaxSize())
                 }
             }
         },
